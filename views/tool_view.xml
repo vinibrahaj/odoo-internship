@@ -1,0 +1,26 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+    <data>
+
+        <record id="tool_tree_view" model="ir.ui.view">
+            <field name="name">solvitask.tool.tree</field>
+            <field name="model">solvitask.tool</field>
+            <field name="arch" type="xml">
+                <tree string="Tool" editable="bottom">
+                    <field name="name"/>
+                    <field name="description"/>
+                </tree>
+            </field>
+        </record>
+
+        <record id="tool_act_window" model="ir.actions.act_window">
+            <field name="name">Tools</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">solvitask.tool</field>
+            <field name="view_mode">tree,form</field>
+        </record>
+
+        <menuitem name="Tools" id="tool_menu" parent="solvitask_root" action="tool_act_window" sequence="40" groups="solvitask.group_solvitask_manager"/>
+
+    </data>
+</odoo>

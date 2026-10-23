@@ -1,0 +1,112 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+    <data>
+
+        <record id="plumber_form_view" model="ir.ui.view">
+            <field name="name">solvitask.plumber.form</field>
+            <field name="model">solvitask.plumber</field>
+            <field name="arch" type="xml">
+                <form string="Plumber">
+                    <sheet>
+                        <div class="oe_title">
+                            <label for="name"/>
+                            <h1>
+                                <field name="name" placeholder="Name"/>
+                                <field name="surname" placeholder="Surname"/>
+                            </h1>
+                        </div>
+                        <group>
+                            <group string="Contact">
+                                <label for="phone"/>
+                                <div class="o_row">
+                                    <field name="phone" class="oe_inline"/>
+                                    <button name="action_open_whatsapp" type="object" icon="fa-whatsapp" title="Message on WhatsApp" class="btn-link text-success" invisible="not phone"/>
+                                </div>
+                                <field name="email" widget="email"/>
+                                <field name="address" groups="solvitask.group_solvitask_manager"/>
+                            </group>
+                            <group string="Plumber Details" groups="solvitask.group_solvitask_manager">
+                                <field name="balance"/>
+                                <field name="hourly_rate" groups="solvitask.group_solvitask_manager"/>
+                                <field name="payment_method"/>
+                                <field name="iban" invisible="payment_method != 'bank'"/>
+                                <field name="user_id"/>
+                            </group>
+                        </group>
+                        <group string="Weekly Availability" groups="solvitask.group_solvitask_manager">
+                            <field name="slot_ids" nolabel="1" colspan="2">
+                                <tree editable="bottom" create="false" delete="false">
+                                    <field name="day_of_week"/>
+                                    <field name="day_off"/>
+                                    <field name="hour_from" readonly="day_off"/>
+                                    <field name="hour_to" readonly="day_off"/>
+                                </tree>
+                            </field>
+                        </group>
+                        <group string="Skills" groups="solvitask.group_solvitask_manager">
+                            <field name="service_ids" widget="many2many_tags" groups="solvitask.group_solvitask_manager"/>
+                        </group>
+                        <notebook groups="solvitask.group_solvitask_manager">
+                            <page string="Jobs">
+                                <field name="job_ids">
+                                    <tree>
+                                        <field name="name"/>
+                                        <field name="stage_id"/>
+                                        <field name="total_price"/>
+                                    </tree>
+                                </field>
+                            </page>
+                            <page string="Requests">
+                                <field name="request_ids">
+                                    <tree>
+                                        <field name="create_date"/>
+                                        <field name="name"/>
+                                        <field name="request_type"/>
+                                        <field name="state"/>
+                                    </tree>
+                                </field>
+                            </page>
+                        </notebook>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <record id="plumber_tree_view" model="ir.ui.view">
+            <field name="name">solvitask.plumber.tree</field>
+            <field name="model">solvitask.plumber</field>
+            <field name="arch" type="xml">
+                <tree string="Plumber">
+                    <field name="name"/>
+                    <field name="surname"/>
+                    <field name="phone"/>
+                    <button name="action_open_whatsapp" type="object" icon="fa-whatsapp" title="Message on WhatsApp" class="text-success"/>
+                    <field name="service_ids" widget="many2many_tags" groups="solvitask.group_solvitask_manager"/>
+                    <field name="hourly_rate" groups="solvitask.group_solvitask_manager"/>
+                </tree>
+            </field>
+        </record>
+
+        <record id="plumber_search_view" model="ir.ui.view">
+            <field name="name">solvitask.plumber.search</field>
+            <field name="model">solvitask.plumber</field>
+            <field name="arch" type="xml">
+                <search string="Plumber">
+                    <field name="name"/>
+                    <field name="surname"/>
+                    <field name="phone"/>
+                </search>
+            </field>
+        </record>
+
+        <record id="plumber_act_window" model="ir.actions.act_window">
+            <field name="name">Plumbers</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">solvitask.plumber</field>
+            <field name="view_mode">tree,form</field>
+        </record>
+
+        <menuitem name="Plumbers" id="plumber_menu" parent="solvitask_root" action="plumber_act_window" sequence="20"/>
+
+    </data>
+</odoo>

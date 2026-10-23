@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+    <data>
+
+        <menuitem id="solvitask_root" name="SolviTask" sequence="10" groups="solvitask.group_solvitask_manager,solvitask.group_solvitask_customer,solvitask.group_solvitask_plumber"/>
+
+    </data>
+</odoo>

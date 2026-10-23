@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="service_request_form_view" model="ir.ui.view">
+        <field name="name">solvitask.service.request.form</field>
+        <field name="model">solvitask.service.request</field>
+        <field name="arch" type="xml">
+            <form string="Service Request">
+                <header>
+                    <button name="action_save_draft" type="object" string="Save as Draft"
+                            invisible="state != 'draft'"/>
+                    <button name="action_submit" type="object" string="Submit"
+                            class="oe_highlight" invisible="state != 'draft'"
+                            confirm="Submit this request? Its details will be locked and a job will be created."/>
+                    <button name="action_view_job" type="object" string="View Job"
+                            invisible="not job_id"/>
+                    <field name="state" widget="statusbar" readonly="1"
+                           statusbar_visible="draft,submitted"/>
+                </header>
+                <sheet>
+                    <widget name="web_ribbon" title="Submitted" bg_color="text-bg-success"
+                            invisible="state != 'submitted'"/>
+                    <div class="alert alert-info" role="alert" invisible="state != 'submitted'">
+                        Your request has been submitted. The details are locked. Your job is available under View Job.
+                    </div>
+                    <group>
+                        <group string="Service">
+                            <field name="request_kind" widget="radio" readonly="state != 'draft'"/>
+                            <field name="service_id" invisible="request_kind != 'service'"
+                                   required="request_kind == 'service'" readonly="state != 'draft'"
+                                   options="{'no_create': True, 'no_create_edit': True}"/>
+                            <field name="name" readonly="state != 'draft' or request_kind == 'service'"
+                                   force_save="1" placeholder="Title for your Other request"/>
+                        </group>
+                        <group string="Location">
+                            <field name="customer_id" readonly="state != 'draft'"
+                                   groups="solvitask.group_solvitask_manager"
+                                   options="{'no_create': True, 'no_create_edit': True}"/>
+                            <field name="building_type" readonly="state != 'draft'"/>
+                            <field name="service_address" readonly="state != 'draft'"/>
+                            <field name="job_id" invisible="1"/>
+                            <field name="submitted_at" invisible="not submitted_at" readonly="1"/>
+                        </group>
+                    </group>
+                    <group string="Description">
+                        <field name="description" nolabel="1"
+                               readonly="state != 'draft' or request_kind == 'service'" force_save="1"
+                               placeholder="Describe the work needed"/>
+                    </group>
+                    <group string="Required Image">
+                        <field name="problem_photo" widget="image" nolabel="1"
+                               readonly="state != 'draft'" options="{'size': [320, 240]}"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="service_request_tree_view" model="ir.ui.view">
+        <field name="name">solvitask.service.request.tree</field>
+        <field name="model">solvitask.service.request</field>
+        <field name="arch" type="xml">
+            <tree string="Service Requests">
+                <field name="create_date"/>
+                <field name="name"/>
+                <field name="customer_id" groups="solvitask.group_solvitask_manager"/>
+                <field name="service_id"/>
+                <field name="building_type"/>
+                <field name="service_address"/>
+                <field name="state" widget="badge" decoration-info="state == 'draft'"
+                       decoration-success="state == 'submitted'"/>
+                <field name="submitted_at" optional="hide"/>
+            </tree>
+        </field>
+    </record>
+    <record id="service_request_search_view" model="ir.ui.view">
+        <field name="name">solvitask.service.request.search</field>
+        <field name="model">solvitask.service.request</field>
+        <field name="arch" type="xml">
+            <search string="Service Requests">
+                <field name="name"/>
+                <field name="service_id"/>
+                <field name="customer_id" groups="solvitask.group_solvitask_manager"/>
+                <filter name="draft" string="Draft" domain="[('state', '=', 'draft')]"/>
+                <filter name="submitted" string="Submitted" domain="[('state', '=', 'submitted')]"/>
+                <group expand="0" string="Group By">
+                    <filter name="by_state" string="Status" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+    <record id="service_request_act_window" model="ir.actions.act_window">
+        <field name="name">Service Requests</field>
+        <field name="res_model">solvitask.service.request</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+    <menuitem id="service_request_menu" name="Service Requests" parent="solvitask_root"
+              action="service_request_act_window" sequence="1"
+              groups="solvitask.group_solvitask_customer,solvitask.group_solvitask_manager"/>
+</odoo>

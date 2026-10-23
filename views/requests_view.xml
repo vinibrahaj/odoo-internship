@@ -1,0 +1,96 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+    <data>
+
+        <record id="requests_form_view" model="ir.ui.view">
+            <field name="name">solvitask.requests.form</field>
+            <field name="model">solvitask.requests</field>
+            <field name="arch" type="xml">
+                <form string="Request">
+                    <header>
+                        <button name="action_submit" type="object" string="Submit" class="oe_highlight" invisible="state != 'draft'"/>
+                        <button name="action_approve" type="object" string="Approve" class="oe_highlight" invisible="state != 'submitted'" groups="solvitask.group_solvitask_manager"/>
+                        <button name="action_reject" type="object" string="Reject" invisible="state != 'submitted'" groups="solvitask.group_solvitask_manager"/>
+                        <field name="state" widget="statusbar" statusbar_visible="draft,submitted,approved"/>
+                    </header>
+                    <sheet>
+                        <widget name="web_ribbon" title="Rejected" bg_color="text-bg-danger" invisible="state != 'rejected'"/>
+                        <widget name="web_ribbon" title="Approved" bg_color="text-bg-success" invisible="state != 'approved'"/>
+                        <div class="oe_title">
+                            <label for="name"/>
+                            <h1>
+                                <field name="name" readonly="state != 'draft'" placeholder="Short title"/>
+                            </h1>
+                        </div>
+                        <group>
+                            <group string="Request">
+                                <field name="request_type" readonly="state != 'draft'"/>
+                                <field name="job_id" readonly="state != 'draft'"/>
+                                <field name="decision_date" readonly="1" invisible="not decision_date"/>
+                            </group>
+                        </group>
+                        <group string="Details">
+                            <field name="description" nolabel="1" colspan="2" readonly="state != 'draft'" placeholder="Describe what is being requested..."/>
+                        </group>
+                        <group string="Manager Note">
+                            <field name="manager_note" nolabel="1" colspan="2" placeholder="What was decided / changed on the job..."/>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <record id="requests_tree_view" model="ir.ui.view">
+            <field name="name">solvitask.requests.tree</field>
+            <field name="model">solvitask.requests</field>
+            <field name="arch" type="xml">
+                <tree string="Requests">
+                    <field name="create_date"/>
+                    <field name="name"/>
+                    <field name="request_type"/>
+                    <field name="job_id"/>
+                    <field name="source"/>
+                    <field name="customer_id" optional="hide"/>
+                    <field name="plumber_id" optional="hide"/>
+                    <field name="state" widget="badge" decoration-info="state == 'submitted'" decoration-success="state == 'approved'" decoration-danger="state == 'rejected'"/>
+                </tree>
+            </field>
+        </record>
+
+        <record id="requests_search_view" model="ir.ui.view">
+            <field name="name">solvitask.requests.search</field>
+            <field name="model">solvitask.requests</field>
+            <field name="arch" type="xml">
+                <search string="Requests">
+                    <field name="name"/>
+                    <field name="job_id"/>
+                    <field name="customer_id"/>
+                    <field name="plumber_id"/>
+                    <filter string="New" name="f_draft" domain="[('state', '=', 'draft')]"/>
+                    <filter string="Submitted" name="f_submitted" domain="[('state', '=', 'submitted')]"/>
+                    <filter string="Approved" name="f_approved" domain="[('state', '=', 'approved')]"/>
+                    <filter string="Rejected" name="f_rejected" domain="[('state', '=', 'rejected')]"/>
+                    <separator/>
+                    <filter string="From customers" name="f_from_customer" domain="[('source', '=', 'customer')]"/>
+                    <filter string="From plumbers" name="f_from_plumber" domain="[('source', '=', 'plumber')]"/>
+                    <group expand="0" string="Group By">
+                        <filter string="Status" name="g_state" context="{'group_by': 'state'}"/>
+                        <filter string="Type" name="g_type" context="{'group_by': 'request_type'}"/>
+                        <filter string="Job" name="g_job" context="{'group_by': 'job_id'}"/>
+                    </group>
+                </search>
+            </field>
+        </record>
+
+        <record id="requests_act_window" model="ir.actions.act_window">
+            <field name="name">Change Requests</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">solvitask.requests</field>
+            <field name="view_mode">tree,form</field>
+            <field name="context">{'search_default_f_submitted': 1}</field>
+        </record>
+
+        <menuitem name="Change Requests" id="requests_menu" parent="solvitask_root" action="requests_act_window" sequence="7"/>
+
+    </data>
+</odoo>
