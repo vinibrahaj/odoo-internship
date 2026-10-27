@@ -55,6 +55,17 @@ class SolvitaskJob(models.Model):
         ('unique_intake_request', 'unique(intake_request_id)',
          'A submitted service request can create only one job.'),
     ]
+    job_source = fields.Selection([
+        ('app', 'Customer Service Request'),
+        ('instagram', 'Instagram'),
+        ('whatsapp', 'Whatsapp'),
+        ('phone', 'Phone Call')
+        ('email', 'Email'),
+        ('other', 'Other')
+    ], string='Job Source', required=True)
+    source_details = fields.Text(
+        string='Source Details'
+    )
 
     customer_id = fields.Many2one(
         comodel_name='solvitask.customer',
