@@ -42,7 +42,7 @@ STARTED_STAGES = {'stage_in_progress', 'stage_ready_invoice',
 class SolvitaskJob(models.Model):
     _name = 'solvitask.job'
     _description = 'Service Request / Job'
-    _order = 'started_date desc nulls last, id desc'
+    _order = 'priority desc, started_date desc, id desc'
 
     name = fields.Char(string='Reference', compute='_compute_name', store=True)
     title = fields.Char(string='Request Title')
