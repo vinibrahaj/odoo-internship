@@ -1,74 +1,132 @@
-# SolviTask MVP — Odoo 17
+# SolviTask — Plumbing & Heating Service Management for Odoo 17
 
-**New in 17.0.3.0.0:** customer Draft → Submitted service intake creates a linked job. Read `UPDATE_SERVICE_REQUESTS.md` for the workflow and the exact changed files.
+SolviTask is a custom Odoo 17 module for running a small plumbing and heating business. Customers submit service requests, managers turn them into jobs and assign plumbers, plumbers log their work, and every job moves through a clear pipeline from *New* to *Paid & Closed*.
 
-This revision implements Manager, Customer and Plumber as **internal users**.
+It was built as an internship project and is intended for a dedicated Odoo database.
 
-## Access policy
+---
 
-| Area | Customer | Plumber | Manager |
-| --- | --- | --- | --- |
-| Service requests | Own drafts; submit to create job; submitted snapshot locked | No access | View all; can submit on behalf of customers |
-| Customer profiles | Own profile, read only | Profiles of customers on assigned jobs; birthday and login hidden | All; manage |
-| Jobs | Own only; read only; created by submitting a service request | Assigned only; update work notes and hours | All; manage assignments, prices, materials, stages |
-| Plumber profiles | Name, surname, phone, email of plumbers assigned to own jobs | Own and co-assigned plumbers: name, surname, phone, email | All fields; manage |
-| Plumber finances, home address, skills, availability, profile job/request lists, linked login | Hidden | Hidden, including own private fields in this MVP | Full access |
-| Change requests | Own, against own jobs; edit draft and submit | Own, against assigned jobs; edit draft and submit | View all; approve/reject submitted requests |
-| Catalogs | Read | Read | Manage |
-| Materials used on jobs | Read own job lines | Read assigned job lines; request additions | Manage |
-| Standard Contacts/Users directory | Own contact/login and company contacts only | Own contact/login and company contacts only | Existing Odoo access applies |
+## Features
 
-Co-assignment means a current database assignment on the same job, including closed jobs. Removing the shared assignment revokes visibility. Audit metadata such as record IDs is still available; protected business fields are enforced by Python field groups, not just hidden in forms. Job totals remain visible to the customer and assigned plumbers. Rates and bank details on plumber profiles are manager-only. Work notes are for plumbers/managers.
+- **Customer service requests** — customers describe the problem, pick a service (or "Other"), add a photo, the building type and the job address. Submitting a request automatically creates a linked job, and the submitted request is locked.
+- **Job management** — jobs have a priority (Low, Normal, High, Emergency), assigned plumbers, materials used, work notes and hours, and a Kanban pipeline:
 
-## Findings addressed
+  `New Jobs → In Progress → Ready to Invoice → Invoiced → Paid & Closed` (or `Canceled`)
 
-- The original ACLs granted broad create/write/delete rights, without any record rules.
-- Plumber privacy used negative field groups and left hourly rates exposed.
-- Readonly fields and hidden buttons were not server-side authorization checks.
-- Requests could be forged with another requester or an already-approved initial state.
-- Customers could change assignment, customer, price or stage through RPC.
-- Missing catalog, material-line and availability ACLs caused ordinary access failures.
-- Customer creation referenced ValidationError without importing it.
-- New users inherited default groups through additive group commands. New logins now receive exactly the internal group and their SolviTask role, plus implied groups.
-- Plumber home addresses are no longer copied into standard Contacts by account provisioning.
-- Scheduling a New job through onchange conflicted with creation requiring New; scheduling is now an explicit manager action.
+  Stage changes follow fixed allowed transitions and are enforced on the server.
+- **Change requests** — customers and plumbers can ask the manager for a reschedule, extra materials, a custom diagnosis, or a scope/price adjustment. The manager approves or rejects them.
+- **Plumber profiles** — contact details, skills, weekly availability slots, payment method and bank details (manager-only).
+- **Catalogs** — services, tools, and materials/parts with units (unit, meter, kg, liter).
+- **WhatsApp button** — open a WhatsApp chat with a customer or plumber directly from their profile.
+- **Job invoice report** — a printable PDF job summary (not a posted accounting invoice).
+- **Automatic logins** — creating a customer or plumber profile creates their Odoo login from their email address, with exactly the right role.
 
-## Install or upgrade
+## User roles
 
-1. Back up the database. Extract this archive into your configured custom addons directory, so the module is `custom_addons/solvitask/__manifest__.py`. Replace the existing module directory rather than nesting another copy inside it.
-2. Stop the running Odoo service before upgrading from the terminal.
-3. Run with your actual executable, configuration and database:
+SolviTask has three roles, all implemented as internal Odoo users:
 
-   ```bash
-   /path/to/odoo-bin -c /path/to/odoo.conf -d YOUR_DATABASE -u solvitask --stop-after-init
-   ```
+| Role | What they can do |
+| --- | --- |
+| **Manager** | Sees and manages everything: customers, plumbers, jobs, prices, stages, catalogs, and approval of change requests. |
+| **Customer** | Creates and submits their own service requests, views their own jobs (read only), and sends change requests on them. |
+| **Plumber** | Sees only jobs assigned to them, updates work notes and hours, requests materials, and sends change requests. |
 
-   For a first installation, use `-i solvitask` instead of `-u solvitask`.
-4. Start Odoo again. Assign your operator **SolviTask / Manager** in Settings → Users → Access Rights. The system administrator can assign this role.
-5. Managers create customers and plumbers inside SolviTask. Each profile automatically creates its own internal login from the email address. Use Settings → Users to set a password or send a password reset invitation if outgoing email is configured. Account creation itself does not send an invitation.
-6. Use separate logins to verify the access matrix; administrator/superuser access bypasses normal restrictions.
+Private data, such as plumber rates, bank details and home addresses, is restricted on the server through field groups and record rules, not just hidden in the forms. The full access matrix and security details are in [`SECURITY.md`](SECURITY.md).
 
-**Existing accounts:** the upgrade migration removes additional application/administration groups from customer/plumber logins and retains their internal SolviTask role. Manager access stays unchanged. If a user has more than one SolviTask role, the upgrade stops and rolls back: fix that user's roles and run the upgrade again. Do not combine customer/plumber roles with sales, accounting, settings or other application permissions. These MVP logins deliberately cannot be repurposed as general staff accounts. If you previously shared the same login between multiple customer or plumber profiles, resolve that duplication before upgrading because the new unique constraints require one profile per login per model.
+## Project structure
 
-New profile creation requires a new email/login; this revision does not include a wizard to attach pre-existing logins. Existing profile links remain intact. No data records or jobs are deleted by this revision.
-
-## Verification
-
-Python syntax, XML parsing, manifest data files, ACL model/group references, and view field references and modifier field availability were checked locally. **Odoo and PostgreSQL are unavailable in the build environment, so installation, view compilation and integration tests have not been run.** Test on an Odoo 17 staging database before production.
-
-The included `tests/test_security.py` exercises internal account groups, customer isolation, direct read/write attempts, peer field privacy, assignment revocation, request spoofing/self-approval, core directory isolation, and incompatible role groups. Run on a disposable test database:
-
-```bash
-/path/to/odoo-bin -c /path/to/odoo.conf -d SOLVITASK_TEST_DB -i solvitask \
-  --test-enable --test-tags /solvitask --stop-after-init
+```
+odoo-internship/
+├── .devcontainer/          # GitHub Codespaces / Docker setup
+│   ├── devcontainer.json
+│   ├── docker-compose.yml
+│   └── odoo.conf
+└── custom/                 # The Odoo module (installed as "solvitask")
+    ├── __manifest__.py
+    ├── models/             # Customer, plumber, job, service, request models
+    ├── views/              # Forms, lists, Kanban and menus
+    ├── security/           # Groups, record rules, access rights
+    ├── report/             # Job invoice PDF
+    ├── static/src/         # Backend SCSS and JS
+    ├── migrations/         # Upgrade scripts
+    └── tests/              # Security and service-request tests
 ```
 
-The intended environment is a dedicated MVP database. Record rules also restrict standard Contacts and Users for these two roles, so other installed apps may need separate integration work. Other third-party modules, custom controllers, existing public attachment shares, or code that deliberately uses sudo require their own audit; this module cannot revoke independently issued public links. The existing invoice output is a simple PDF job summary, not a posted accounting invoice.
+> **The module folder must be named `solvitask` inside Odoo's addons path**, because the manifest loads its assets from `solvitask/static/...`. The Docker setup mounts `custom/` as `/mnt/extra-addons/solvitask` for you.
 
-## Odoo reference
+## Running it in GitHub Codespaces
 
-https://www.odoo.com/documentation/17.0/developer/tutorials/restrict_data_access.html
+1. Open the repository on GitHub and choose **Code → Codespaces → Create codespace**.
+2. The containers start automatically. To start them by hand, run:
 
-## View installation fix
+   ```bash
+   docker compose -f .devcontainer/docker-compose.yml up -d
+   ```
 
-The Job form includes an unrestricted hidden, readonly stage_id field so ribbon modifiers can validate for every user. Role-specific statusbars remain in place. Server-side permissions still control changes to stages.
+3. In the **Ports** tab, make sure port **8069** uses the **HTTP** protocol (right-click → *Change Port Protocol*), then open its link.
+4. Create a database in the database manager. The master password is `admin`, as set in `.devcontainer/odoo.conf`.
+5. Log in, enable **developer mode**, go to **Apps → Update Apps List**, search for **SolviTask** and install it.
+6. In **Settings → Users**, give your user the **SolviTask / Manager** role.
+
+### Useful commands
+
+Upgrade the module after code changes. Replace `YOUR_DB` with your database name:
+
+```bash
+docker compose -f .devcontainer/docker-compose.yml exec odoo \
+  odoo -c /etc/odoo/odoo.conf -d YOUR_DB -u solvitask --stop-after-init --no-http
+docker compose -f .devcontainer/docker-compose.yml restart odoo
+```
+
+View the Odoo logs:
+
+```bash
+docker compose -f .devcontainer/docker-compose.yml logs -f odoo
+```
+
+### Codespaces notes
+
+- Odoo shares PostgreSQL's network (`network_mode: "service:db"`) and connects to the database at `localhost`. This avoids a container-to-container networking issue with Docker inside Codespaces.
+- The Odoo container starts Odoo directly instead of using the image's startup script, whose database check hung in Codespaces.
+- Data is kept in Docker volumes while the codespace exists. Deleting the codespace deletes the test data.
+
+## Installing on a regular Odoo server
+
+1. Copy the `custom/` folder into your addons directory and rename it to `solvitask`, so you have `addons/solvitask/__manifest__.py`.
+2. Install it:
+
+   ```bash
+   odoo-bin -c /path/to/odoo.conf -d YOUR_DB -i solvitask --stop-after-init
+   ```
+
+   For an upgrade, use `-u solvitask` instead of `-i solvitask`. Back up the database first.
+3. Start Odoo and assign the **SolviTask / Manager** role to your operator user.
+
+## Running the tests
+
+The tests cover role isolation, field privacy, request spoofing, assignment revocation and the service-request workflow. Always run them on a throwaway database:
+
+```bash
+docker compose -f .devcontainer/docker-compose.yml exec odoo \
+  odoo -c /etc/odoo/odoo.conf -d solvitask_test -i solvitask \
+  --test-enable --test-tags /solvitask --stop-after-init --no-http
+```
+
+## Getting started as a manager
+
+1. Fill in the catalogs: **services**, **tools** and **materials**.
+2. Create **plumber** profiles with their weekly availability. Each profile gets its own login.
+3. Create **customer** profiles. Each customer gets a login and can then submit service requests.
+4. When a request comes in, open the created job, assign plumbers, schedule it, and move it through the stages.
+5. Review incoming **change requests** and approve or reject them.
+
+Administrator and superuser accounts bypass the normal access rules, so test each role with its own separate login.
+
+## Requirements
+
+- Odoo 17.0 (Community), depending only on `base` and `web`
+- PostgreSQL 12 or newer (the Docker setup uses PostgreSQL 15)
+
+## Disclaimer
+
+SolviTask is an MVP. The included PDF is a job summary, not an accounting invoice, and the module's record rules also restrict the standard Contacts and Users directories for customers and plumbers. Other installed apps may therefore need extra integration work.
