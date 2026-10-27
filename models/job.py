@@ -59,7 +59,7 @@ class SolvitaskJob(models.Model):
         ('app', 'Customer Service Request'),
         ('instagram', 'Instagram'),
         ('whatsapp', 'Whatsapp'),
-        ('phone', 'Phone Call')
+        ('phone', 'Phone Call'),
         ('email', 'Email'),
         ('other', 'Other')
     ], string='Job Source', required=True)
