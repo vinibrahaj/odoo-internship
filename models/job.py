@@ -273,7 +273,7 @@ class SolvitaskJob(models.Model):
                     if not job.started_date:
                         vals['started_date'] = fields.Datetime.now()
 
-                if new_stage == 'stage_finished':
+                if new_stage == 'stage_ready_invoice':
                     vals['finished_date'] = fields.Datetime.now()
         return super().write(vals)
 
@@ -344,11 +344,21 @@ class SolvitaskJob(models.Model):
 
     def action_cancel(self):
         for job in self:
-            if job.stage_id in STARTED_STAGES and not self.env.user.has_group(
-                'solvitask.group_solvitask_manager'):
-                    raise ValidationError(
-                        "This job has alredy started. Only a manager can cancel it."
-                    )
+            if job.stage_id in STARTED_STAGES:
+                if not self.env.user.has_group('solvitask.group_solvitask_manager'):
+                    raise ValidationError("This job has alredy started. Provide the reason and details to cancel it!")
+
+                return {
+                    'type': 'ir.actions.act_window',
+                    'name': 'Cancel Job',
+                    'res_model': 'solvitask.cancel.wizard',
+                    'view_mode': 'form',
+                    'target': 'new',
+                    'context': {
+                        'default_job_id': job.id,
+                    },
+                }
+                    
             job.stage_id = CANCELED_STAGE
 
     # Generate invoice:
