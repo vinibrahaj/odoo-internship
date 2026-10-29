@@ -199,3 +199,54 @@ class SolvitaskPlumberSlot(models.Model):
                 raise ValidationError(
                     'Start time must be before end time.'
                 )
+
+
+class SolvitaskPlumberLine(models.Model):
+    _name = 'solvitask.plumber.line'
+    _description = 'Job Plumber Labor Line'
+
+    job_id = fields.Many2one(
+        'solvitask.job',
+        required=True,
+        ondelete='cascade'
+    )
+
+    plumber_id = fields.Many2one(
+        'solvitask.plumber',
+        required=True,
+        ondelete='restrict'
+    )
+
+    hours_worked = fields.Float(
+        string='Hours Worked',
+        related='job_id.hours_worked',
+        store=True,
+        readonly=True
+    )
+
+    hourly_rate = fields.Float(
+        string='Hourly Rate',
+        digits=(12, 2),
+        required=True
+    )
+
+    subtotal = fields.Float(
+        string='Subtotal',
+        compute='_compute_subtotal',
+        store=True
+    )
+
+    _sql_constraints = [
+        (
+            'unique_job_plumber',
+            'unique(job_id, plumber_id)',
+            'A plumber can only have one line per job.'
+        )
+    ]
+
+    @api.depends('hours_worked', 'hourly_rate')
+    def _compute_subtotal(self):
+        for line in self:
+            line.subtotal = (
+                line.hours_worked * line.hourly_rate
+            )

@@ -78,6 +78,11 @@ class SolvitaskJob(models.Model):
         column1='solvitask_job_id', column2='solvitask_plumber_id',
         string='Assigned Plumber'
     )
+    plumber_line_ids = fields.One2many(
+        'solvitask.plumber.line',
+        'job_id',
+        string='Plumber Labor'
+    )
     # this is what customers see:
     customer_plumber_ids = fields.Many2many(
         comodel_name='solvitask.plumber',
@@ -137,8 +142,12 @@ class SolvitaskJob(models.Model):
         string='Materials Used'
     )
     work_notes = fields.Text(string='Work Notes', groups='solvitask.group_solvitask_manager')
-    hours_worked = fields.Float(string='Hours Worked')
-
+    hours_worked = fields.Float(
+        string='Hours Worked',
+        compute='_compute_hours_worked',
+        store=True,
+        readonly=True
+    )
     # --- pipeline stage: this is what the kanban board drags between ---
     stage_id = fields.Selection(
         selection=STAGE_SELECTION,
@@ -216,21 +225,43 @@ class SolvitaskJob(models.Model):
         for job in self:
             job.initial_price = job.service_id.unit_price
 
-    @api.depends('hours_worked', 'plumber_ids.hourly_rate',
-                 'material_line_ids.subtotal', 'initial_price', 'is_custom')
+    @api.depends(
+        'is_custom','initial_price','hours_worked','plumber_ids','plumber_ids.hourly_rate',
+        'material_line_ids.subtotal'
+    )
     def _compute_costs(self):
         for job in self:
-            # Listed services are charged at the catalog price, so no hourly
-            # labor. Only a custom job bills time.
-            if job.is_custom:
-                job.labor_cost = sum(
+            job.labor_cost = (
+                sum(
                     plumber.hourly_rate * job.hours_worked
                     for plumber in job.plumber_ids
                 )
-            else:
-                job.labor_cost = 0.0
-            job.material_cost = sum(job.material_line_ids.mapped('subtotal'))
-            job.total_price = job.initial_price + job.labor_cost + job.material_cost
+                if job.is_custom else 0.0
+            )
+
+            job.material_cost = sum(
+                job.material_line_ids.mapped('subtotal')
+            )
+
+            job.total_price = (
+                job.initial_price
+                + job.labor_cost
+                + job.material_cost
+            )
+    
+    @api.depends('started_date', 'finished_date')
+    def _compute_hours_worked(self):
+        for job in self:
+            job.hours_worked = 0.0
+
+            if job.started_date and job.finished_date:
+                duration = (
+                    job.finished_date - job.started_date
+                )
+                job.hours_worked = max(
+                    duration.total_seconds() / 3600.0,
+                    0.0
+                )
 
     def _is_manager(self):
         return self.env.su or self.env.user.has_group('solvitask.group_solvitask_manager')
@@ -287,17 +318,21 @@ class SolvitaskJob(models.Model):
             # shared values first then timestaps per job
             result = super().write(vals)
 
-            now = fields.Datetime.now()
-            for job in self:
-                if new_stage == 'stage_in_progress' and not job.started_date:
-                    super(SolvitaskJob, job).write({
-                        'started_date': now
-                    })
+            if new_stage:
+                now = fields.Datetime.now()
+                for job in self:
+                    if new_stage == 'stage_in_progress' and not job.started_date:
+                        super(SolvitaskJob, job).write({
+                            'started_date': now
+                        })
+                for job in jobs_to_finalize:
+                    if not job.finished_date:
+                        super(SolvitaskJob, job).write({
+                            'finished_date': now
+                        })
 
-                if new_stage == 'stage_ready_invoice' and not job.finished_date:
-                    super(SolvitaskJob, job).write({
-                        'finished_date': now
-                    })
+                # One helper call, one batch create.
+                jobs_to_finalize._create_plumber_lines()
 
             return result
         return super().write(vals)
@@ -358,6 +393,31 @@ class SolvitaskJob(models.Model):
                 raise ValidationError(
                     f"Not available on {local:%A %d/%m at %H:%M}: {names}"
                 )
+
+    def _create_plumber_lines(self):
+        vals_list = []
+
+        for job in self:
+            if not job.is_custom:
+                continue
+
+            existing_plumbers = set(
+                job.plumber_line_ids.mapped('plumber_id').ids
+            )
+
+            for plumber in job.plumber_ids:
+                if plumber.id in existing_plumbers:
+                    continue
+
+                vals_list.append({
+                    'job_id': job.id,
+                    'plumber_id': plumber.id,
+                    'hours_worked': job.hours_worked,
+                    'hourly_rate': plumber.hourly_rate,
+                })
+
+        if vals_list:
+            self.env['solvitask.plumber.line'].create(vals_list)
 
     # --- buttons ---
     def action_mark_started(self):

@@ -102,9 +102,21 @@
                                 </group>
                                 <field name="work_notes" placeholder="What was found and fixed..."/>
                             </page>
-                            <page string="Price">
-                                <group class="oe_subtotal_footer">
-                                    <field name="total_price" readonly="1"/>
+                            <page string="Plumbers cost"
+                                invisible="not is_custom or stage_id not in ('stage_ready_invoice', 'stage_invoiced', 'stage_paid')">
+                                <group>
+                                    <field name="plumber_line_ids"
+                                        nolabel="1"
+                                        readonly="1">
+
+                                        <tree create="0" edit="0" delete="0">
+                                            <field name="plumber_id"/>
+                                            <field name="hours_worked"/>
+                                            <field name="hourly_rate"/>
+                                            <field name="subtotal" sum="Total Labor"/>
+                                        </tree>
+
+                                    </field>
                                 </group>
                             </page>
                             <page string="Requests">
