@@ -18,7 +18,7 @@ class SolvitaskServiceRequest(models.Model):
     customer_id = fields.Many2one(
         'solvitask.customer', required=True, ondelete='restrict',
         default=lambda self: self._default_customer())
-    problem_photo = fields.Image(string='Image', required=True, attachment=False)
+    problem_photo = fields.Image(string='Image', attachment=False)
     building_type = fields.Selection(BUILDING_TYPES, required=True)
     service_address = fields.Char(string='Job Address', required=True)
     state = fields.Selection(
