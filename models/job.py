@@ -119,6 +119,10 @@ class SolvitaskJob(models.Model):
         string="Cancellation Reason",
         readonly=True,
     )
+    cancel_date = fields.Datetime(
+        string="Canceled date",
+        readonly=True
+    )
     cancel_details = fields.Text(
         string="Cancellation Details",
         readonly=True,
@@ -365,11 +369,14 @@ class SolvitaskJob(models.Model):
                     'view_mode': 'form',
                     'target': 'new',
                     'context': {
-                        'default_job_id': job.id,
+                        'default_job_id': self.id,
                     },
                 }
                     
-            job.stage_id = CANCELED_STAGE
+            self.write({
+                'stage_id': CANCELED_STAGE,
+                'cancel_date': fields.Datetime.now()
+            })
 
     # Generate invoice:
     def action_generate_invoice(self):

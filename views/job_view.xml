@@ -76,6 +76,12 @@
                                 <field name="last_request_update" readonly="1" invisible="not last_request_update"/>
                                 <field name="last_request_update" readonly="1" invisible="not last_request_update"/>
                             </group>
+                            <group string="Cancellation Details"
+                                invisible="state != 'cancelled'">
+                                <field name="cancel_reason"/>
+                                <field name="cancel_details"/>
+                                <field name="cancel_date" readonly="1"/>
+                            </group>
                         </group>
                         <notebook>
                             <page string="Work Done" groups="solvitask.group_solvitask_plumber,solvitask.group_solvitask_manager">
