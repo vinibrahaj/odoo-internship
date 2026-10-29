@@ -40,7 +40,7 @@
                     <!--Available to every modifier; stage changes remain controlled server-side.--><field name="stage_id" invisible="1" readonly="1"/><header>
                         <button name="action_mark_started" string="Start Now" type="object" class="oe_highlight" groups="solvitask.group_solvitask_manager" invisible="stage_id not in ('stage_new')"/>
                         <button name="action_generate_invoice" string="Generate &amp; Send Invoice" type="object" class="oe_highlight" groups="solvitask.group_solvitask_manager" invisible="stage_id not in ('stage_ready_invoice', 'stage_invoiced', 'stage_paid')"/>
-                        <button name="action_cancel" string="Cancel Job" type="object" class="btn-secondary" groups="solvitask.group_solvitask_manager" invisible="stage_id in ('stage_canceled', 'stage_paid')" confirm="Cancel this job?/>
+                        <button name="action_cancel" string="Cancel Job" type="object" class="btn-secondary" groups="solvitask.group_solvitask_manager" invisible="stage_id in ('stage_canceled', 'stage_paid')" confirm="Cancel this job?"/>
 
                         <field name="stage_id" widget="statusbar" options="{'clickable': '1'}" groups="solvitask.group_solvitask_manager" statusbar_visible="stage_new,stage_in_progress,stage_ready_invoice,stage_invoiced,stage_paid"/>
                         <field name="stage_id" widget="statusbar" readonly="1" groups="solvitask.group_solvitask_customer" statusbar_visible="stage_new,stage_in_progress,stage_ready_invoice,stage_invoiced,stage_paid"/>
