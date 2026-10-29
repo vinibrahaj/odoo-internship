@@ -77,7 +77,7 @@
                                 <field name="last_request_update" readonly="1" invisible="not last_request_update"/>
                             </group>
                             <group string="Cancellation Details"
-                                invisible="state != 'cancelled'">
+                                invisible="stage_id != 'stage_cancelled'">
                                 <field name="cancel_reason" readonly="1"/>
                                 <field name="cancel_details" readonly="1"/>
                                 <field name="cancel_date" readonly="1"/>
