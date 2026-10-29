@@ -1,0 +1,32 @@
+<odoo>
+    <record id="view_cancel_job_wizard_form" model="ir.ui.view">
+        <field name="name">solvitask.cancel.wizard.form</field>
+        <field name="model">solvitask.cancel.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Cancel Job">
+                <group>
+                    <field name="job_id" invisible="1"/>
+
+                    <field name="cancel_reason"
+                           placeholder="Enter cancellation reason..."
+                           required="1"/>
+
+                    <field name="cancel_details"
+                           placeholder="Explain why this job is being canceled..."
+                           required="1"/>
+                </group>
+
+                <footer>
+                    <button name="action_confirm_cancel"
+                            string="Confirm Cancellation"
+                            type="object"
+                            class="btn-primary"/>
+
+                    <button string="Back"
+                            special="cancel"
+                            class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

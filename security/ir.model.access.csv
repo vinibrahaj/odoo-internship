@@ -1,4 +1,5 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_cancel_job_wizard,access.cancel.job.wizard,model_solvitask_cancel_wizard,solvitask.group_solvitask_manager,1,1,1,1
 access_job_customer,job.customer,model_solvitask_job,group_solvitask_customer,1,0,0,0
 access_job_plumber,job.plumber,model_solvitask_job,group_solvitask_plumber,1,1,0,0
 access_job_manager,job.manager,model_solvitask_job,group_solvitask_manager,1,1,1,1

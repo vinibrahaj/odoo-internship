@@ -16,6 +16,7 @@
     'data': [
         'security/solvitask_security.xml',
         'security/ir.model.access.csv',
+        'wizard/cancel_job_wizard_views.xml',
         'report/job_invoice_report.xml',
         'views/menus.xml',
         'views/customer_view.xml',

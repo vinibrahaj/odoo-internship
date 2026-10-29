@@ -114,6 +114,16 @@ class SolvitaskJob(models.Model):
         string='Finished Date:',
         readonly=True
     )
+
+    cancel_reason = fields.Char(
+        string="Cancellation Reason",
+        readonly=True,
+    )
+    cancel_details = fields.Text(
+        string="Cancellation Details",
+        readonly=True,
+    )
+
     tool_ids = fields.Many2many('solvitask.tool', string='Required Tools')
 
     # --- work done ---
