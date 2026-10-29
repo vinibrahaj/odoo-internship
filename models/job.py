@@ -283,12 +283,23 @@ class SolvitaskJob(models.Model):
                         "A job in '%s' can't be moved to '%s'."
                         % (STAGE_LABELS.get(old_stage, old_stage),
                            STAGE_LABELS.get(new_stage, new_stage)))
-                if new_stage == 'stage_in_progress':
-                    if not job.started_date:
-                        vals['started_date'] = fields.Datetime.now()
+    
+            # shared values first then timestaps per job
+            result = super().write(vals)
 
-                if new_stage == 'stage_ready_invoice':
-                    vals['finished_date'] = fields.Datetime.now()
+            now = fields.Datetime.now()
+            for job in self:
+                if new_stage == 'stage_in_progress' and not job.started_date:
+                    super(SolvitaskJob, job).write({
+                        'started_date': now
+                    })
+
+                if new_stage == 'stage_ready_invoice' and not job.finished_date:
+                    super(SolvitaskJob, job).write({
+                        'finished_date': now
+                    })
+
+            return result
         return super().write(vals)
 
     """ 
