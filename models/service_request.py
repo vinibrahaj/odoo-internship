@@ -133,8 +133,7 @@ class SolvitaskServiceRequest(models.Model):
     def _check_required_details(self):
         for request in self:
             if (not (request.name or '').strip() or not (request.description or '').strip()
-                    or not request.problem_photo or not request.building_type
-                    or not (request.service_address or '').strip()):
+                    or not request.building_type or not (request.service_address or '').strip()):
                 raise ValidationError('Title, description, image, building type and job address are required, including for drafts.')
             if request.request_kind == 'service' and not request.service_id:
                 raise ValidationError('Choose a service, or select Other.')
